@@ -709,7 +709,11 @@
       const { useState, useEffect, useCallback } = React;
 
       // ── CONFIG — change this to your Spring Boot server URL ──────────────────────
-      const BASE = "http://localhost:10000/api/v1";
+      // Local testing 
+      //const BASE = "http://localhost:10000/api/v1";
+
+      // Deploy Testing
+      const BASE = "https://scalable-task-management-apis.onrender.com/api/v1"
 
       // ── API ───────────────────────────────────────────────────────────────────────
       async function api(method, path, body, token) {
