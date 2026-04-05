@@ -1,0 +1,1439 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TaskFlow — Task Manager</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0a0a0f;
+        --surface: #11111a;
+        --surface2: #1a1a28;
+        --border: #2a2a40;
+        --accent: #7c6aff;
+        --accent2: #ff6a9e;
+        --green: #3dffa0;
+        --yellow: #ffd166;
+        --red: #ff5a5a;
+        --text: #e8e8f0;
+        --muted: #6b6b8a;
+        --font-display: "Syne", sans-serif;
+        --font-mono: "DM Mono", monospace;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-display);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(124, 106, 255, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(124, 106, 255, 0.04) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      #root {
+        position: relative;
+        z-index: 1;
+      }
+
+      .auth-wrap {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+      }
+
+      .auth-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 3rem 2.5rem;
+        width: 100%;
+        max-width: 420px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+      }
+
+      .auth-card::before {
+        content: "";
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(
+          circle,
+          rgba(124, 106, 255, 0.25) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+      }
+
+      .auth-card::after {
+        content: "";
+        position: absolute;
+        bottom: -60px;
+        left: -60px;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(
+          circle,
+          rgba(255, 106, 158, 0.15) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+      }
+
+      .logo {
+        font-size: 1.6rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        margin-bottom: 0.4rem;
+      }
+      .logo span {
+        color: var(--accent);
+      }
+
+      .auth-sub {
+        color: var(--muted);
+        font-size: 0.85rem;
+        font-family: var(--font-mono);
+        margin-bottom: 2.5rem;
+      }
+
+      .field {
+        margin-bottom: 1.2rem;
+      }
+
+      .field label {
+        display: block;
+        font-size: 0.75rem;
+        font-family: var(--font-mono);
+        color: var(--muted);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+
+      .field input,
+      .field textarea,
+      .field select {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 0.9rem;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+
+      .field input:focus,
+      .field textarea:focus,
+      .field select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(124, 106, 255, 0.15);
+      }
+
+      .field textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      .field select option {
+        background: var(--surface2);
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.8rem 1.5rem;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 0.9rem;
+        letter-spacing: 0.02em;
+        transition: all 0.2s;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+        width: 100%;
+      }
+      .btn-primary:hover {
+        background: #9585ff;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(124, 106, 255, 0.35);
+      }
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid var(--border);
+      }
+      .btn-ghost:hover {
+        border-color: var(--accent);
+        color: var(--text);
+      }
+
+      .btn-danger {
+        background: rgba(255, 90, 90, 0.12);
+        color: var(--red);
+        border: 1px solid rgba(255, 90, 90, 0.25);
+        padding: 0.5rem 0.9rem;
+        font-size: 0.8rem;
+      }
+      .btn-danger:hover {
+        background: rgba(255, 90, 90, 0.22);
+      }
+
+      .btn-edit {
+        background: rgba(124, 106, 255, 0.12);
+        color: var(--accent);
+        border: 1px solid rgba(124, 106, 255, 0.25);
+        padding: 0.5rem 0.9rem;
+        font-size: 0.8rem;
+      }
+      .btn-edit:hover {
+        background: rgba(124, 106, 255, 0.22);
+      }
+
+      .btn-sm {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.78rem;
+        border-radius: 7px;
+      }
+
+      .switch-link {
+        text-align: center;
+        margin-top: 1.5rem;
+        font-size: 0.85rem;
+        color: var(--muted);
+        font-family: var(--font-mono);
+      }
+      .switch-link button {
+        background: none;
+        border: none;
+        color: var(--accent);
+        cursor: pointer;
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        text-decoration: underline;
+      }
+
+      .toast-wrap {
+        position: fixed;
+        top: 1.5rem;
+        right: 1.5rem;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        pointer-events: none;
+      }
+
+      .toast {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--green);
+        border-radius: 10px;
+        padding: 0.75rem 1.2rem;
+        font-family: var(--font-mono);
+        font-size: 0.82rem;
+        min-width: 260px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        animation: slideIn 0.3s ease;
+        pointer-events: auto;
+      }
+      .toast.error {
+        border-left-color: var(--red);
+      }
+      .toast.info {
+        border-left-color: var(--accent);
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .dash-layout {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: 100vh;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 2rem;
+        border-bottom: 1px solid var(--border);
+        background: rgba(10, 10, 15, 0.8);
+        backdrop-filter: blur(12px);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .topbar-logo {
+        font-size: 1.3rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+      .topbar-logo span {
+        color: var(--accent);
+      }
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .badge {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        color: var(--muted);
+      }
+
+      .health-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--muted);
+        display: inline-block;
+        margin-right: 0.4rem;
+      }
+      .health-dot.ok {
+        background: var(--green);
+        box-shadow: 0 0 6px var(--green);
+      }
+      .health-dot.err {
+        background: var(--red);
+      }
+
+      .dash-main {
+        padding: 2rem;
+        max-width: 1000px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+      }
+
+      .section-title {
+        font-size: 1.4rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+      .section-title .count {
+        font-size: 0.85rem;
+        font-weight: 400;
+        font-family: var(--font-mono);
+        color: var(--muted);
+        margin-left: 0.5rem;
+      }
+
+      .task-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .task-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.2rem 1.4rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        animation: fadeUp 0.3s ease;
+      }
+      .task-card:hover {
+        border-color: rgba(124, 106, 255, 0.4);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .task-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .task-title {
+        font-weight: 700;
+        font-size: 1rem;
+        margin-bottom: 0.3rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .task-desc {
+        font-size: 0.82rem;
+        color: var(--muted);
+        font-family: var(--font-mono);
+        margin-bottom: 0.6rem;
+        line-height: 1.5;
+      }
+      .task-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
+
+      .chip {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
+        font-weight: 500;
+        letter-spacing: 0.05em;
+      }
+      .chip-id {
+        background: var(--surface2);
+        color: var(--muted);
+        border: 1px solid var(--border);
+      }
+      .chip-status-pending {
+        background: rgba(255, 209, 102, 0.1);
+        color: var(--yellow);
+        border: 1px solid rgba(255, 209, 102, 0.25);
+      }
+      .chip-status-completed {
+        background: rgba(61, 255, 160, 0.1);
+        color: var(--green);
+        border: 1px solid rgba(61, 255, 160, 0.25);
+      }
+      .chip-status-in_progress {
+        background: rgba(124, 106, 255, 0.1);
+        color: var(--accent);
+        border: 1px solid rgba(124, 106, 255, 0.25);
+      }
+
+      .task-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-shrink: 0;
+      }
+
+      .create-panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.8rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+      }
+      .create-panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent), var(--accent2));
+      }
+      .create-panel-title {
+        font-weight: 700;
+        font-size: 0.75rem;
+        margin-bottom: 1.2rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-family: var(--font-mono);
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      @media (max-width: 600px) {
+        .form-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .form-actions {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1rem;
+        justify-content: flex-end;
+      }
+
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        animation: fadeIn 0.2s ease;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .modal-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 2rem;
+        width: 100%;
+        max-width: 440px;
+        box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+        animation: popIn 0.2s ease;
+      }
+      @keyframes popIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      .modal-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 1.4rem;
+      }
+
+      .empty {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--muted);
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+      }
+      .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.4;
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+      .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.2rem 1.4rem;
+      }
+      .stat-label {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.4rem;
+      }
+      .stat-value {
+        font-size: 1.8rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+      }
+      .c-accent {
+        color: var(--accent);
+      }
+      .c-green {
+        color: var(--green);
+      }
+      .c-yellow {
+        color: var(--yellow);
+      }
+
+      .admin-badge {
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        background: rgba(255, 106, 158, 0.1);
+        color: var(--accent2);
+        border: 1px solid rgba(255, 106, 158, 0.25);
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
+        margin-left: 0.6rem;
+      }
+
+      .user-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+      }
+      .user-table th {
+        text-align: left;
+        padding: 0.7rem 1rem;
+        color: var(--muted);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        border-bottom: 1px solid var(--border);
+      }
+      .user-table td {
+        padding: 0.8rem 1rem;
+        border-bottom: 1px solid rgba(42, 42, 64, 0.5);
+        color: var(--text);
+      }
+      .user-table tr:hover td {
+        background: rgba(124, 106, 255, 0.04);
+      }
+
+      .tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+      }
+      .tab {
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.5rem 1.1rem;
+        color: var(--muted);
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .tab.active,
+      .tab:hover {
+        border-color: var(--accent);
+        color: var(--text);
+        background: rgba(124, 106, 255, 0.08);
+      }
+      .tab.active {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+      const { useState, useEffect, useCallback } = React;
+
+      // ── CONFIG — change this to your Spring Boot server URL ──────────────────────
+      const BASE = "http://localhost:10000/api/v1";
+
+      // ── API ───────────────────────────────────────────────────────────────────────
+      async function api(method, path, body, token) {
+        const opts = {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include", // 🔥 THIS is what you were missing
+          ...(body ? { body: JSON.stringify(body) } : {}),
+        };
+        const res = await fetch(`${BASE}${path}`, opts);
+        console.log("Sending request : " + res);
+        const text = await res.text();
+        let data = null;
+        try {
+          data = text ? JSON.parse(text) : null;
+        } catch {}
+        if (!res.ok)
+          throw new Error(data?.message || data?.error || `HTTP ${res.status}`);
+        return data;
+      }
+
+      // ── TOAST ─────────────────────────────────────────────────────────────────────
+      function ToastContainer({ toasts }) {
+        return (
+          <div className="toast-wrap">
+            {toasts.map((t) => (
+              <div key={t.id} className={`toast ${t.type}`}>
+                {t.type === "error" ? "✗" : t.type === "info" ? "ℹ" : "✓"}{" "}
+                {t.msg}
+              </div>
+            ))}
+          </div>
+        );
+      }
+
+      function useToast() {
+        const [toasts, setToasts] = useState([]);
+        const show = useCallback((msg, type = "success") => {
+          const id = Date.now() + Math.random();
+          setToasts((p) => [...p, { id, msg, type }]);
+          setTimeout(
+            () => setToasts((p) => p.filter((t) => t.id !== id)),
+            3500,
+          );
+        }, []);
+        return { toasts, show };
+      }
+
+      // ── AUTH SCREEN ───────────────────────────────────────────────────────────────
+      function AuthScreen({ onLogin, show }) {
+        const [mode, setMode] = useState("login");
+        const [form, setForm] = useState({
+          name: "",
+          email: "",
+          password: "",
+        });
+        const [loading, setLoading] = useState(false);
+        const upd = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+        const submit = async () => {
+          if (!form.email || !form.password) {
+            show("Email and password required.", "error");
+            return;
+          }
+          setLoading(true);
+          try {
+            if (mode === "register") {
+              await api("POST", "/auth/register", {
+                name: form.name,
+                email: form.email,
+                password: form.password,
+              });
+              show("Registered! Please log in.", "info");
+              setMode("login");
+              setForm({ name: form.name, email: "", password: "" });
+            } else {
+              const data = await api("POST", "/auth/login", {
+                email: form.email,
+                password: form.password,
+              });
+              const token =
+                data?.token ||
+                data?.accessToken ||
+                data?.access_token ||
+                data?.jwt;
+              if (!token)
+                throw new Error(
+                  "No JWT token in response. Check your API response field.",
+                );
+              onLogin(token, form.name);
+            }
+          } catch (e) {
+            show(e.message, "error");
+          }
+          setLoading(false);
+        };
+
+        return (
+          <div className="auth-wrap">
+            <div className="auth-card">
+              <div className="logo">
+                Task<span>Flow</span>
+              </div>
+              <div className="auth-sub">
+                {mode === "login"
+                  ? "— sign in to continue —"
+                  : "— create your account —"}
+              </div>
+
+              {mode === "register" && (
+                <div className="field">
+                  <label>Username</label>
+                  <input
+                    type="name"
+                    placeholder="Name"
+                    value={form.name}
+                    onChange={(e) => upd("name", e.target.value)}
+                  />
+                </div>
+              )}
+              <div className="field">
+                <label>Email</label>
+                <input
+                  type="email"
+                  placeholder="your@gmail.com"
+                  value={form.email}
+                  onChange={(e) => upd("email", e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label>Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={(e) => upd("password", e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && submit()}
+                />
+              </div>
+
+              <button
+                className="btn btn-primary"
+                onClick={submit}
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="spinner" />
+                ) : mode === "login" ? (
+                  "Sign In"
+                ) : (
+                  "Create Account"
+                )}
+              </button>
+
+              <div className="switch-link">
+                {mode === "login" ? (
+                  <>
+                    Don't have an account?{" "}
+                    <button onClick={() => setMode("register")}>
+                      Register
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    Already have an account?{" "}
+                    <button onClick={() => setMode("login")}>Sign In</button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ── EDIT MODAL ────────────────────────────────────────────────────────────────
+      function EditModal({ task, token, onClose, onSaved, show }) {
+        const [form, setForm] = useState({
+          title: task.title || "",
+          description: task.description || "",
+          status: task.status || "PENDING",
+        });
+        const [loading, setLoading] = useState(false);
+        const upd = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+        const save = async () => {
+          setLoading(true);
+          try {
+            await api("PUT", `/tasks/${task.id}`, form, token);
+            show("Task updated!");
+            onSaved();
+          } catch (e) {
+            show(e.message, "error");
+          }
+          setLoading(false);
+        };
+
+        return (
+          <div
+            className="modal-overlay"
+            onClick={(e) => e.target === e.currentTarget && onClose()}
+          >
+            <div className="modal-card">
+              <div className="modal-title">Edit Task #{task.id}</div>
+              <div className="field">
+                <label>Title</label>
+                <input
+                  value={form.title}
+                  onChange={(e) => upd("title", e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label>Description</label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => upd("description", e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label>Status</label>
+                <select
+                  value={form.status}
+                  onChange={(e) => upd("status", e.target.value)}
+                >
+                  <option value="PENDING">PENDING</option>
+                  <option value="IN_PROGRESS">IN_PROGRESS</option>
+                  <option value="COMPLETED">COMPLETED</option>
+                </select>
+              </div>
+              <div className="form-actions">
+                <button className="btn btn-ghost" onClick={onClose}>
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-primary"
+                  style={{ width: "auto" }}
+                  onClick={save}
+                  disabled={loading}
+                >
+                  {loading ? <span className="spinner" /> : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ── TASK CARD ─────────────────────────────────────────────────────────────────
+      function TaskCard({ task, token, onRefresh, show, isAdmin }) {
+        const [editing, setEditing] = useState(false);
+        const [deleting, setDeleting] = useState(false);
+
+        const deleteTask = async () => {
+          if (!confirm(`Delete task "${task.title}"?`)) return;
+          setDeleting(true);
+          try {
+            const path = isAdmin
+              ? `/admin/tasks/${task.id}`
+              : `/tasks/${task.id}`;
+            await api("DELETE", path, null, token);
+            show("Task deleted.", "info");
+            onRefresh();
+          } catch (e) {
+            show(e.message, "error");
+            setDeleting(false);
+          }
+        };
+
+        const statusKey = (task.status || "pending").toLowerCase();
+        const statusClass = `chip chip-status-${statusKey}`;
+
+        return (
+          <>
+            <div className="task-card">
+              <div className="task-body">
+                <div className="task-title">
+                  {task.title || "Untitled Task"}
+                </div>
+                {task.description && (
+                  <div className="task-desc">{task.description}</div>
+                )}
+                <div className="task-meta">
+                  <span className="chip chip-id">#{task.id}</span>
+                  <span className={statusClass}>
+                    {task.status || "PENDING"}
+                  </span>
+                  {task.username && (
+                    <span className="chip chip-id">@{task.username}</span>
+                  )}
+                </div>
+              </div>
+              <div className="task-actions">
+                {!isAdmin && (
+                  <button
+                    className="btn btn-edit btn-sm"
+                    onClick={() => setEditing(true)}
+                  >
+                    Edit
+                  </button>
+                )}
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={deleteTask}
+                  disabled={deleting}
+                >
+                  {deleting ? <span className="spinner" /> : "Del"}
+                </button>
+              </div>
+            </div>
+            {editing && (
+              <EditModal
+                task={task}
+                token={token}
+                show={show}
+                onClose={() => setEditing(false)}
+                onSaved={() => {
+                  setEditing(false);
+                  onRefresh();
+                }}
+              />
+            )}
+          </>
+        );
+      }
+
+      // ── DASHBOARD ─────────────────────────────────────────────────────────────────
+      function Dashboard({ token, username, onLogout, show }) {
+        const [tasks, setTasks] = useState([]);
+        const [loadingTasks, setLoadingTasks] = useState(false);
+        const [creating, setCreating] = useState(false);
+        const [tab, setTab] = useState("my");
+        const [adminTasks, setAdminTasks] = useState([]);
+        const [adminUsers, setAdminUsers] = useState([]);
+        const [health, setHealth] = useState(null);
+        const [newTask, setNewTask] = useState({
+          title: "",
+          description: "",
+          status: "PENDING",
+        });
+        const upd = (k, v) => setNewTask((p) => ({ ...p, [k]: v }));
+
+        // Health check on mount
+        useEffect(() => {
+          api("GET", "/auth/health", null, token)
+            .then(() => setHealth("ok"))
+            .catch(() => setHealth("err"));
+        }, []);
+
+        const fetchTasks = useCallback(async () => {
+          setLoadingTasks(true);
+          try {
+            const data = await api("GET", "/tasks", null, token);
+            setTasks(
+              Array.isArray(data)
+                ? data
+                : data?.tasks || data?.data || data?.content || [],
+            );
+          } catch (e) {
+            show(e.message, "error");
+          }
+          setLoadingTasks(false);
+        }, [token]);
+
+        const fetchAdmin = useCallback(async () => {
+          try {
+            const [users, atasks] = await Promise.all([
+              api("GET", "/admin/users", null, token).catch(() => []),
+              api("GET", "/admin/tasks", null, token).catch(() => []),
+            ]);
+            setAdminUsers(
+              Array.isArray(users) ? users : users?.users || users?.data || [],
+            );
+            setAdminTasks(
+              Array.isArray(atasks)
+                ? atasks
+                : atasks?.tasks || atasks?.data || atasks?.content || [],
+            );
+          } catch (e) {
+            show(e.message, "error");
+          }
+        }, [token]);
+
+        useEffect(() => {
+          fetchTasks();
+        }, []);
+        useEffect(() => {
+          if (tab === "admin") fetchAdmin();
+        }, [tab]);
+
+        const createTask = async () => {
+          if (!newTask.title.trim()) {
+            show("Title is required.", "error");
+            return;
+          }
+          setCreating(true);
+          try {
+            await api("POST", "/tasks", newTask, token);
+            show("Task created!");
+            setNewTask({ title: "", description: "", status: "PENDING" });
+            fetchTasks();
+          } catch (e) {
+            show(e.message, "error");
+          }
+          setCreating(false);
+        };
+
+        const deleteAll = async () => {
+          if (!confirm("Delete ALL your tasks? This cannot be undone.")) return;
+          try {
+            await api("DELETE", "/tasks", null, token);
+            show("All tasks deleted.", "info");
+            fetchTasks();
+          } catch (e) {
+            show(e.message, "error");
+          }
+        };
+
+        const pending = tasks.filter(
+          (t) => (t.status || "").toUpperCase() === "PENDING",
+        ).length;
+        const done = tasks.filter(
+          (t) => (t.status || "").toUpperCase() === "COMPLETED",
+        ).length;
+        const inprog = tasks.filter(
+          (t) => (t.status || "").toUpperCase() === "IN_PROGRESS",
+        ).length;
+
+        return (
+          <div className="dash-layout">
+            <div className="topbar">
+              <div className="topbar-logo">
+                Task<span>Flow</span>
+              </div>
+              <div className="topbar-right">
+                <span className="badge">
+                  <span className={`health-dot ${health || ""}`} />
+                  API{" "}
+                  {health === "ok"
+                    ? "Online"
+                    : health === "err"
+                      ? "Offline"
+                      : "…"}
+                </span>
+                <span className="badge">@{username}</span>
+                <button
+                  className="btn btn-ghost"
+                  style={{ padding: "0.45rem 1rem", fontSize: "0.82rem" }}
+                  onClick={onLogout}
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+
+            <div className="dash-main">
+              {/* STATS */}
+              <div className="stats-row">
+                <div className="stat-card">
+                  <div className="stat-label">Total Tasks</div>
+                  <div className="stat-value c-accent">{tasks.length}</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-label">Pending</div>
+                  <div className="stat-value c-yellow">{pending}</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-label">In Progress</div>
+                  <div className="stat-value c-accent">{inprog}</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-label">Completed</div>
+                  <div className="stat-value c-green">{done}</div>
+                </div>
+              </div>
+
+              {/* CREATE TASK */}
+              <div className="create-panel">
+                <div className="create-panel-title">+ New Task</div>
+                <div className="form-row">
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label>Title *</label>
+                    <input
+                      placeholder="Task title..."
+                      value={newTask.title}
+                      onChange={(e) => upd("title", e.target.value)}
+                    />
+                  </div>
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label>Status</label>
+                    <select
+                      value={newTask.status}
+                      onChange={(e) => upd("status", e.target.value)}
+                    >
+                      <option value="PENDING">PENDING</option>
+                      <option value="IN_PROGRESS">IN_PROGRESS</option>
+                      <option value="COMPLETED">COMPLETED</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="field" style={{ marginTop: "1rem" }}>
+                  <label>Description</label>
+                  <textarea
+                    placeholder="Optional description..."
+                    value={newTask.description}
+                    onChange={(e) => upd("description", e.target.value)}
+                    style={{ minHeight: 60 }}
+                  />
+                </div>
+                <div className="form-actions">
+                  <button
+                    className="btn btn-primary"
+                    style={{ width: "auto" }}
+                    onClick={createTask}
+                    disabled={creating}
+                  >
+                    {creating ? <span className="spinner" /> : "Create Task"}
+                  </button>
+                </div>
+              </div>
+
+              {/* TABS */}
+              <div className="tabs">
+                <button
+                  className={`tab ${tab === "my" ? "active" : ""}`}
+                  onClick={() => setTab("my")}
+                >
+                  My Tasks
+                </button>
+                <button
+                  className={`tab ${tab === "admin" ? "active" : ""}`}
+                  onClick={() => setTab("admin")}
+                >
+                  Admin <span className="admin-badge">ADMIN</span>
+                </button>
+              </div>
+
+              {/* MY TASKS TAB */}
+              {tab === "my" && (
+                <>
+                  <div className="section-header">
+                    <div className="section-title">
+                      Tasks <span className="count">{tasks.length} total</span>
+                    </div>
+                    <div style={{ display: "flex", gap: "0.6rem" }}>
+                      <button
+                        className="btn btn-ghost"
+                        style={{ padding: "0.5rem 1rem", fontSize: "0.82rem" }}
+                        onClick={fetchTasks}
+                      >
+                        ↻ Refresh
+                      </button>
+                      {tasks.length > 0 && (
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={deleteAll}
+                        >
+                          Delete All
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {loadingTasks ? (
+                    <div className="empty">
+                      <span
+                        className="spinner"
+                        style={{ width: 28, height: 28, borderWidth: 3 }}
+                      />
+                    </div>
+                  ) : tasks.length === 0 ? (
+                    <div className="empty">
+                      <div className="empty-icon">📭</div>
+                      No tasks yet — create one above!
+                    </div>
+                  ) : (
+                    <div className="task-list">
+                      {tasks.map((t) => (
+                        <TaskCard
+                          key={t.id}
+                          task={t}
+                          token={token}
+                          show={show}
+                          onRefresh={fetchTasks}
+                          isAdmin={false}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* ADMIN TAB */}
+              {tab === "admin" && (
+                <>
+                  <div className="section-header">
+                    <div className="section-title">
+                      All Users{" "}
+                      <span className="count">{adminUsers.length}</span>
+                    </div>
+                    <button
+                      className="btn btn-ghost"
+                      style={{ padding: "0.5rem 1rem", fontSize: "0.82rem" }}
+                      onClick={fetchAdmin}
+                    >
+                      ↻ Refresh
+                    </button>
+                  </div>
+                  {adminUsers.length > 0 ? (
+                    <div
+                      style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 14,
+                        overflow: "hidden",
+                        marginBottom: "2rem",
+                      }}
+                    >
+                      <table className="user-table">
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {adminUsers.map((u, i) => (
+                            <tr key={u.id || i}>
+                              <td>#{u.id}</td>
+                              <td>@{u.username}</td>
+                              <td>{u.email || "—"}</td>
+                              <td>
+                                <span className="chip chip-id">
+                                  {u.role || "USER"}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="empty" style={{ padding: "2rem" }}>
+                      No users found or insufficient permissions.
+                    </div>
+                  )}
+
+                  <div className="section-header">
+                    <div className="section-title">
+                      All Tasks{" "}
+                      <span className="count">{adminTasks.length}</span>
+                    </div>
+                  </div>
+                  {adminTasks.length === 0 ? (
+                    <div className="empty" style={{ padding: "2rem" }}>
+                      No tasks or insufficient permissions.
+                    </div>
+                  ) : (
+                    <div className="task-list">
+                      {adminTasks.map((t) => (
+                        <TaskCard
+                          key={t.id}
+                          task={t}
+                          token={token}
+                          show={show}
+                          onRefresh={fetchAdmin}
+                          isAdmin={true}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      // ── APP ROOT ──────────────────────────────────────────────────────────────────
+      function App() {
+        const [token, setToken] = useState(
+          () => localStorage.getItem("tf_token") || null,
+        );
+        const [username, setUsername] = useState(
+          () => localStorage.getItem("tf_user") || "",
+        );
+        const { toasts, show } = useToast();
+
+        const login = (tok, user) => {
+          localStorage.setItem("tf_token", tok);
+          localStorage.setItem("tf_user", user);
+          setToken(tok);
+          setUsername(user);
+          show(`Welcome, ${user}!`);
+        };
+
+        const logout = () => {
+          localStorage.removeItem("tf_token");
+          localStorage.removeItem("tf_user");
+          setToken(null);
+          setUsername("");
+          show("Logged out.", "info");
+        };
+
+        return (
+          <>
+            <ToastContainer toasts={toasts} />
+            {!token ? (
+              <AuthScreen onLogin={login} show={show} />
+            ) : (
+              <Dashboard
+                token={token}
+                username={username}
+                onLogout={logout}
+                show={show}
+              />
+            )}
+          </>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>
